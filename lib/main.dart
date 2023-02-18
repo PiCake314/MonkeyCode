@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:monkey_code/code_handeler.dart';
+import 'package:monkey_code/end_screen.dart';
 import 'constants.dart';
+import 'menu.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +34,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int index = 0;
+  List<Map<String, String>> code = HW;
   String text = "";
   String lang = "";
 
@@ -41,9 +44,27 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
+    super.initState();
     index = Random().nextInt(code.length);
     text = code[index]["script"].toString();
     lang = code[index]["language"].toString();
+  }
+
+  void reset() {
+    int temp = Random().nextInt(code.length);
+    while (temp == index) {
+      temp = Random().nextInt(code.length);
+    }
+
+    setState(() {
+      index = temp;
+      text = code[index]["script"].toString();
+      lang = code[index]["language"].toString();
+      textController.clear();
+      timer = 0;
+      end = true;
+      mistakes = 0;
+    });
   }
 
   @override
@@ -65,13 +86,38 @@ class _MyHomePageState extends State<MyHomePage> {
           Container(
             padding: const EdgeInsets.all(16),
             alignment: Alignment.topCenter,
-            child: const Text(
-              "Monkey Code",
-              style: TextStyle(
-                fontFamily: "Monaco",
-                fontSize: 30,
-                color: Colors.white54,
+            child: TextButton(
+              child: const Text(
+                "Monkey Code",
+                style: TextStyle(
+                  fontFamily: "Monaco",
+                  fontSize: 30,
+                  color: Colors.white54,
+                ),
               ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => Menu(chooseMode: (list) {
+                      setState(() {
+                        code = list;
+                        index = Random().nextInt(code.length);
+                        text = code[index]["script"].toString();
+                        lang = code[index]["language"].toString();
+                        textController.clear();
+                        timer = 0;
+                        end = true;
+                        mistakes = 0;
+                      });
+
+                      Navigator.of(context).pop();
+                    }),
+                    transitionDuration: const Duration(milliseconds: 250),
+                    transitionsBuilder: (_, a, __, c) =>
+                        FadeTransition(opacity: a, child: c),
+                  ),
+                );
+              },
             ),
           ),
           Container(
@@ -90,22 +136,6 @@ class _MyHomePageState extends State<MyHomePage> {
             padding: const EdgeInsets.all(16),
             alignment: Alignment.bottomCenter,
             child: TextButton(
-              onPressed: () {
-                int temp = Random().nextInt(code.length);
-                while (temp == index) {
-                  temp = Random().nextInt(code.length);
-                }
-
-                setState(() {
-                  index = temp;
-                  text = code[index]["script"].toString();
-                  lang = code[index]["language"].toString();
-                  textController.clear();
-                  timer = 0;
-                  end = true;
-                  mistakes = 0;
-                });
-              },
               child: const Text(
                 "Generate Code",
                 style: TextStyle(
@@ -114,6 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   color: Colors.white54,
                 ),
               ),
+              onPressed: reset,
             ),
           ),
           Container(
@@ -123,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
               "${timer.toString()}s",
               style: const TextStyle(
                 fontFamily: "Monaco",
-                fontSize: 32,
+                fontSize: 20,
                 color: Colors.white54,
               ),
             ),
@@ -157,8 +188,24 @@ class _MyHomePageState extends State<MyHomePage> {
                           timer++;
                         });
 
-                        if (textController.text == text) {
+                        if (textController.text.length >= text.length) {
                           t.cancel();
+                          Navigator.of(context).push(
+                            PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => EndScreen(
+                                code: text,
+                                lang: lang,
+                                mistakes: mistakes,
+                                time: timer,
+                                codeList: code,
+                                reset: reset,
+                              ),
+                              transitionDuration:
+                                  const Duration(milliseconds: 250),
+                              transitionsBuilder: (_, a, __, c) =>
+                                  FadeTransition(opacity: a, child: c),
+                            ),
+                          );
                         } else if (timer > 0 && end) {
                           t.cancel();
                           setState(() {

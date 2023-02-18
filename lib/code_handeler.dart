@@ -1,47 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class InsertTabIntent extends Intent {
-  const InsertTabIntent(this.numSpaces, this.textController);
-  final int numSpaces;
-  final TextEditingController textController;
-}
-
-class InsertTabAction extends Action {
-  @override
-  Object invoke(covariant Intent intent) {
-    if (intent is InsertTabIntent) {
-      final oldValue = intent.textController.value;
-      final newComposing = TextRange.collapsed(oldValue.composing.start);
-      final newSelection = TextSelection.collapsed(
-          offset: oldValue.selection.start + intent.numSpaces);
-
-      final newText = StringBuffer(oldValue.selection.isValid
-          ? oldValue.selection.textBefore(oldValue.text)
-          : oldValue.text);
-      for (var i = 0; i < intent.numSpaces; i++) {
-        newText.write(' ');
-      }
-      newText.write(oldValue.selection.isValid
-          ? oldValue.selection.textAfter(oldValue.text)
-          : '');
-      intent.textController.value = intent.textController.value.copyWith(
-        composing: newComposing,
-        text: newText.toString(),
-        selection: newSelection,
-      );
-    }
-    return '';
-  }
-}
+import 'intents_actions.dart';
 
 TextEditingController textController = TextEditingController();
 
-class CodeHandeler extends StatelessWidget {
+class CodeHandeler extends StatefulWidget {
   final String text;
   final int numLines;
-  final onTap;
-  final onMistake;
+  final Function onTap;
+  final Function onMistake;
   const CodeHandeler({
     super.key,
     required this.text,
@@ -51,64 +19,107 @@ class CodeHandeler extends StatelessWidget {
   });
 
   @override
+  State<CodeHandeler> createState() => _CodeHandelerState();
+}
+
+class _CodeHandelerState extends State<CodeHandeler> {
+  @override
   Widget build(BuildContext context) {
-    int prevLength = 0;
+    // int prevLength = 0;
+    // String prevText = "";
+
+    Color textColor = Colors.white;
 
     return Stack(
       alignment: Alignment.topCenter,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
           alignment: Alignment.topLeft,
           child: Text(
-            text,
-            style: const TextStyle(
-              fontFamily: "Monaco",
-              fontSize: 20,
-              color: Colors.white54,
-              height: 1.3,
+            widget.text,
+              style: const TextStyle(
+                fontFamily: "Monaco",
+                fontSize: 20,
+                color: Colors.white54,
+                height: 1.3,
+              ),
             ),
           ),
-        ),
+
         Actions(
           actions: {InsertTabIntent: InsertTabAction()},
           child: Shortcuts(
             shortcuts: {
               LogicalKeySet(LogicalKeyboardKey.tab):
-                  InsertTabIntent(4, textController)
+                  InsertTabIntent(4, textController),
+              LogicalKeySet(LogicalKeyboardKey.backspace):
+                const BackspaceIntent(),
             },
-            child: TextField(
-              // textAlign: TextAlign.center,
-              decoration: const InputDecoration(border: InputBorder.none),
-              style: TextStyle(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                // focusNode: FocusNode(),
+                // textAlign: TextAlign.center,
+                decoration: const InputDecoration(border: InputBorder.none),
+                style: TextStyle(
+                  fontFamily: "Monaco",
+                  fontSize: 20,
+                  color: textColor,
+                  height: widget.numLines == 1 ? 1 : 1.3,
+                ),
+
+                onChanged: (value) {
+                  // debugPrint(value);
+                  // debugPrint((value == widget.text).toString());
+                  if (value.length == 1) {
+                    widget.onTap();
+                  }
+
+                  if (value.length - 1 > 0 &&
+                      value[value.length - 1] !=
+                          widget.text[value.length - 1]) {
+                    widget.onMistake();
+                  }
+
+                },
+                controller: textController,
+                minLines: widget.numLines,
+                maxLines: widget.numLines,
+                autofocus: true,
+                autocorrect: false,
+                enableSuggestions: false,
+                enableInteractiveSelection: true,
+                cursorColor: Colors.purple,
+              ),
+            ),
+          ),
+        ),
+
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+          alignment: Alignment.topLeft,
+          child: RichText(
+            text: TextSpan(
+              children: [
+                for(int i = 0; i < textController.text.length; i++)
+                TextSpan(
+                  text: widget.text[i],
+                  style: TextStyle(
+                    fontFamily: "Monaco",
+                    fontSize: 20,
+                    color: (i >= textController.text.length) ? Colors.white54 : (textController.text[i] != widget.text[i]) ? Colors.red : Colors.green.withAlpha(0),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+
+              style: const TextStyle(
                 fontFamily: "Monaco",
                 fontSize: 20,
                 color: Colors.white,
-                height: numLines == 1 ? 1 : 1.3,
+                height: 1.3,
               ),
-
-              onChanged: (value) {
-                // debugPrint(value);
-                if (value.length == 1) {
-                  onTap();
-                }
-
-                if (value.length - 1 > 0 &&
-                    value[value.length - 1] != text[value.length - 1] &&
-                    value.length > prevLength) {
-                  onMistake();
-                }
-
-                prevLength = value.length;
-              },
-              controller: textController,
-              minLines: numLines,
-              maxLines: numLines,
-              autofocus: true,
-              autocorrect: false,
-              enableSuggestions: false,
-              enableInteractiveSelection: false,
-              cursorColor: Colors.purple,
             ),
           ),
         ),
