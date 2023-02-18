@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:flutter_highlight/themes/androidstudio.dart';
 
 class InsertTabIntent extends Intent {
   const InsertTabIntent(this.numSpaces, this.textController);
@@ -37,14 +35,24 @@ class InsertTabAction extends Action {
   }
 }
 
+TextEditingController textController = TextEditingController();
+
 class CodeHandeler extends StatelessWidget {
   final String text;
   final int numLines;
-  const CodeHandeler({super.key, required this.text, required this.numLines});
+  final onTap;
+  final onMistake;
+  const CodeHandeler({
+    super.key,
+    required this.text,
+    required this.numLines,
+    required this.onTap,
+    required this.onMistake,
+  });
 
   @override
   Widget build(BuildContext context) {
-    TextEditingController textController = TextEditingController();
+    int prevLength = 0;
 
     return Stack(
       alignment: Alignment.topCenter,
@@ -72,15 +80,35 @@ class CodeHandeler extends StatelessWidget {
             child: TextField(
               // textAlign: TextAlign.center,
               decoration: const InputDecoration(border: InputBorder.none),
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: "Monaco",
                 fontSize: 20,
                 color: Colors.white,
-                height: 1.3,
+                height: numLines == 1 ? 1 : 1.3,
               ),
+
+              onChanged: (value) {
+                // debugPrint(value);
+                if (value.length == 1) {
+                  onTap();
+                }
+
+                if (value.length - 1 > 0 &&
+                    value[value.length - 1] != text[value.length - 1] &&
+                    value.length > prevLength) {
+                  onMistake();
+                }
+
+                prevLength = value.length;
+              },
               controller: textController,
-              minLines: numLines< 10 ? numLines : 10,
+              minLines: numLines,
               maxLines: numLines,
+              autofocus: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              enableInteractiveSelection: false,
+              cursorColor: Colors.purple,
             ),
           ),
         ),
