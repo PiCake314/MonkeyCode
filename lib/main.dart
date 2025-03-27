@@ -187,7 +187,6 @@ class _MyHomePageState extends State<MyHomePage> {
                         setState(() {
                           timer++;
                         });
-
                         if (textController.text.length >= text.length) {
                           t.cancel();
                           Navigator.of(context).push(

@@ -38,7 +38,7 @@ class Menu extends StatelessWidget {
                   SizedBox(
                     width: 200,
                     child: TextButton(
-                      child: const Text("Vairables",
+                      child: const Text("Variables",
                         style: TextStyle(
                           fontSize: 32,
                           color: Colors.white54,
